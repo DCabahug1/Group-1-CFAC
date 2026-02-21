@@ -4,6 +4,7 @@ from PIL import Image
 import io
 import numpy as np
 import cv2
+from utils import match_gesture
 
 app = FastAPI()
 
@@ -36,41 +37,6 @@ def detect_hand_landmarks(image_np):
     
     return np.array(landmarks)
 
-def is_thumbs_up(landmarks):
-    """
-    Detect thumbs up gesture
-    Thumb extended, other fingers curled
-    """
-    # Landmark indices
-    thumb_tip = landmarks[4]
-    thumb_ip = landmarks[3]
-    index_tip = landmarks[8]
-    index_mcp = landmarks[5]
-    middle_tip = landmarks[12]
-    middle_mcp = landmarks[9]
-    ring_tip = landmarks[16]
-    pinky_tip = landmarks[20]
-    wrist = landmarks[0]
-    
-    # Calculate distances
-    thumb_length = np.linalg.norm(thumb_tip - thumb_ip)
-    index_length = np.linalg.norm(index_tip - index_mcp)
-    
-    # Check if thumb is extended (tip far from palm)
-    thumb_extended = np.linalg.norm(thumb_tip - wrist) > np.linalg.norm(thumb_ip - wrist)
-    
-    # Check if fingers are curled (tips close to palm)
-    index_curled = np.linalg.norm(index_tip - wrist) < np.linalg.norm(index_mcp - wrist) * 1.3
-    middle_curled = np.linalg.norm(middle_tip - wrist) < np.linalg.norm(middle_mcp - wrist) * 1.3
-    ring_curled = np.linalg.norm(ring_tip - wrist) < 0.15
-    pinky_curled = np.linalg.norm(pinky_tip - wrist) < 0.15
-    
-    # Thumbs up if thumb extended and fingers curled
-    if thumb_extended and index_curled and middle_curled:
-        confidence = 0.85 if (ring_curled and pinky_curled) else 0.75
-        return True, confidence
-    
-    return False, 0.0
 
 @app.post("/detect-hand")
 async def detect(file: UploadFile = File(...)):
@@ -99,14 +65,14 @@ async def detect(file: UploadFile = File(...)):
                 "error": "No hand detected"
             }
         
-        # Classify gesture
-        is_thumbs, confidence = is_thumbs_up(landmarks)
+        # Match gesture against all specifications
+        gesture_id, confidence = match_gesture(landmarks)
         
-        if is_thumbs:
+        if gesture_id:
             return {
                 "success": True,
-                "sign": "THUMBS_UP",
-                "confidence": confidence
+                "sign": gesture_id,
+                "confidence": round(confidence, 2)
             }
         else:
             return {
