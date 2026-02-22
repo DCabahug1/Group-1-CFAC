@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
 import { DetectionResult } from "../../lib/types";
+import { isLetterAccepted } from "../lib/letterGroups";
 import ASLCamera, { ASLCameraRef } from "./ASLCamera";
 
 export type LetterStatus = "pending" | "correct" | "second-chance" | "failed";
@@ -31,12 +32,16 @@ export default function TestingView({
 
     // Extract just the letter from the result (e.g., "ASL_A" -> "A")
     const detectedLetter = result.sign.replace("ASL_", "");
-    const isCorrect = result.success && detectedLetter === currentLetter;
+
+    // Check if detected letter is in the acceptable group for the expected letter
+    const isCorrect =
+      result.success && isLetterAccepted(currentLetter, detectedLetter);
 
     console.log("Detection result:", {
       detectedLetter,
       currentLetter,
       isCorrect,
+      acceptedSimilar: detectedLetter !== currentLetter && isCorrect,
     });
 
     onLetterComplete(isCorrect);
