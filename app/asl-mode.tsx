@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { DetectionResult } from "../lib/types";
 import ASLCamera from "./components/ASLCamera";
-import { DetectionResult } from "./lib/types";
 
 function ASLMode() {
   const handleDetection = (result: DetectionResult) => {

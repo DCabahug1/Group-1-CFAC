@@ -1,35 +1,10 @@
 """
-Utility functions and configurations for gesture recognition
+Utility functions and configurations for ASL gesture recognition
 """
 import numpy as np
 
-# Gesture shape specifications
+# Gesture shape specifications for common ASL letters
 GESTURE_SPECS = {
-    # Non-ASL gestures
-    "THUMBS_UP": {
-        "name": "Thumbs Up",
-        "checks": [
-            {"type": "extended", "finger": "thumb", "weight": 2.0},
-            {"type": "curled", "finger": "index", "weight": 1.5},
-            {"type": "curled", "finger": "middle", "weight": 1.5},
-            {"type": "curled", "finger": "ring", "weight": 1.0},
-            {"type": "curled", "finger": "pinky", "weight": 1.0}
-        ],
-        "min_score": 0.75
-    },
-    "THUMBS_DOWN": {
-        "name": "Thumbs Down",
-        "checks": [
-            {"type": "extended_down", "finger": "thumb", "weight": 2.0},
-            {"type": "curled", "finger": "index", "weight": 1.5},
-            {"type": "curled", "finger": "middle", "weight": 1.5},
-            {"type": "curled", "finger": "ring", "weight": 1.0},
-            {"type": "curled", "finger": "pinky", "weight": 1.0}
-        ],
-        "min_score": 0.75
-    },
-    
-    # ASL Alphabet - Phase 1: Simple letters
     "ASL_A": {
         "name": "ASL Letter A",
         "checks": [
@@ -37,20 +12,9 @@ GESTURE_SPECS = {
             {"type": "curled", "finger": "middle", "weight": 2.0},
             {"type": "curled", "finger": "ring", "weight": 2.0},
             {"type": "curled", "finger": "pinky", "weight": 2.0},
-            {"type": "thumb_side", "finger": "thumb", "weight": 2.0}  # Thumb alongside, not across
+            {"type": "thumb_side", "finger": "thumb", "weight": 2.0}
         ],
-        "min_score": 0.80
-    },
-    "ASL_S": {
-        "name": "ASL Letter S",
-        "checks": [
-            {"type": "curled", "finger": "index", "weight": 2.0},
-            {"type": "curled", "finger": "middle", "weight": 2.0},
-            {"type": "curled", "finger": "ring", "weight": 2.0},
-            {"type": "curled", "finger": "pinky", "weight": 2.0},
-            {"type": "thumb_across", "finger": "thumb", "weight": 2.0}  # Thumb across fingers
-        ],
-        "min_score": 0.80
+        "min_score": 0.75
     },
     "ASL_B": {
         "name": "ASL Letter B",
@@ -59,10 +23,22 @@ GESTURE_SPECS = {
             {"type": "extended", "finger": "middle", "weight": 2.0},
             {"type": "extended", "finger": "ring", "weight": 2.0},
             {"type": "extended", "finger": "pinky", "weight": 2.0},
-            {"type": "together", "finger": "index", "weight": 1.5},  # Fingers together
-            {"type": "thumb_across", "finger": "thumb", "weight": 2.0}  # Thumb across palm
+            {"type": "together", "finger": "index", "weight": 1.0},
+            {"type": "thumb_across", "finger": "thumb", "weight": 1.5}
         ],
-        "min_score": 0.80
+        "min_score": 0.75
+    },
+    "ASL_C": {
+        "name": "ASL Letter C",
+        "checks": [
+            {"type": "curved", "finger": "index", "weight": 2.0},
+            {"type": "curved", "finger": "middle", "weight": 2.0},
+            {"type": "curved", "finger": "ring", "weight": 2.0},
+            {"type": "curved", "finger": "pinky", "weight": 2.0},
+            {"type": "curved", "finger": "thumb", "weight": 1.5},
+            {"type": "c_shape", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.65
     },
     "ASL_I": {
         "name": "ASL Letter I",
@@ -70,22 +46,10 @@ GESTURE_SPECS = {
             {"type": "curled", "finger": "index", "weight": 2.0},
             {"type": "curled", "finger": "middle", "weight": 2.0},
             {"type": "curled", "finger": "ring", "weight": 2.0},
-            {"type": "extended", "finger": "pinky", "weight": 3.0},  # Only pinky up
+            {"type": "extended", "finger": "pinky", "weight": 3.0},
             {"type": "thumb_across", "finger": "thumb", "weight": 1.5}
         ],
-        "min_score": 0.80
-    },
-    "ASL_Y": {
-        "name": "ASL Letter Y",
-        "checks": [
-            {"type": "curled", "finger": "index", "weight": 2.0},
-            {"type": "curled", "finger": "middle", "weight": 2.0},
-            {"type": "curled", "finger": "ring", "weight": 2.0},
-            {"type": "extended", "finger": "pinky", "weight": 2.0},
-            {"type": "extended", "finger": "thumb", "weight": 2.0},  # Thumb and pinky out
-            {"type": "spread", "finger": "pinky", "weight": 1.5}  # Spread apart
-        ],
-        "min_score": 0.80
+        "min_score": 0.75
     },
     "ASL_L": {
         "name": "ASL Letter L",
@@ -95,9 +59,224 @@ GESTURE_SPECS = {
             {"type": "curled", "finger": "pinky", "weight": 2.0},
             {"type": "extended", "finger": "index", "weight": 2.5},
             {"type": "extended", "finger": "thumb", "weight": 2.5},
-            {"type": "perpendicular", "finger": "thumb", "weight": 2.0}  # 90° angle
+            {"type": "perpendicular", "finger": "thumb", "weight": 2.0}
         ],
-        "min_score": 0.80
+        "min_score": 0.75
+    },
+    "ASL_O": {
+        "name": "ASL Letter O",
+        "checks": [
+            {"type": "curved", "finger": "index", "weight": 2.0},
+            {"type": "curved", "finger": "middle", "weight": 2.0},
+            {"type": "curved", "finger": "ring", "weight": 2.0},
+            {"type": "curved", "finger": "pinky", "weight": 2.0},
+            {"type": "o_shape", "finger": "thumb", "weight": 2.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_S": {
+        "name": "ASL Letter S",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "thumb_across", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_Y": {
+        "name": "ASL Letter Y",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "extended", "finger": "pinky", "weight": 2.0},
+            {"type": "extended", "finger": "thumb", "weight": 2.0},
+            {"type": "spread", "finger": "pinky", "weight": 1.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_D": {
+        "name": "ASL Letter D",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.5},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "together", "finger": "middle", "weight": 1.0},
+            {"type": "extended", "finger": "thumb", "weight": 1.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_E": {
+        "name": "ASL Letter E",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "curled", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_F": {
+        "name": "ASL Letter F",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "extended", "finger": "ring", "weight": 2.0},
+            {"type": "extended", "finger": "pinky", "weight": 2.0},
+            {"type": "together", "finger": "middle", "weight": 1.0},
+            {"type": "extended", "finger": "thumb", "weight": 1.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_G": {
+        "name": "ASL Letter G",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.5},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "extended", "finger": "thumb", "weight": 2.5},
+            {"type": "perpendicular", "finger": "thumb", "weight": 1.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_H": {
+        "name": "ASL Letter H",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "together", "finger": "index", "weight": 1.5},
+            {"type": "extended", "finger": "thumb", "weight": 1.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_K": {
+        "name": "ASL Letter K",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "spread", "finger": "index", "weight": 1.5},
+            {"type": "extended", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_M": {
+        "name": "ASL Letter M",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "thumb_across", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.70
+    },
+    "ASL_N": {
+        "name": "ASL Letter N",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "thumb_across", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.70
+    },
+    "ASL_P": {
+        "name": "ASL Letter P",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "extended", "finger": "thumb", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_Q": {
+        "name": "ASL Letter Q",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.5},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "extended", "finger": "thumb", "weight": 2.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_R": {
+        "name": "ASL Letter R",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "together", "finger": "index", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_T": {
+        "name": "ASL Letter T",
+        "checks": [
+            {"type": "curled", "finger": "index", "weight": 2.0},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "thumb_across", "finger": "thumb", "weight": 2.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_U": {
+        "name": "ASL Letter U",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "together", "finger": "index", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_V": {
+        "name": "ASL Letter V",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "spread", "finger": "index", "weight": 2.0}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_W": {
+        "name": "ASL Letter W",
+        "checks": [
+            {"type": "extended", "finger": "index", "weight": 2.0},
+            {"type": "extended", "finger": "middle", "weight": 2.0},
+            {"type": "extended", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "spread", "finger": "middle", "weight": 1.5}
+        ],
+        "min_score": 0.75
+    },
+    "ASL_X": {
+        "name": "ASL Letter X",
+        "checks": [
+            {"type": "curved", "finger": "index", "weight": 2.5},
+            {"type": "curled", "finger": "middle", "weight": 2.0},
+            {"type": "curled", "finger": "ring", "weight": 2.0},
+            {"type": "curled", "finger": "pinky", "weight": 2.0},
+            {"type": "curled", "finger": "thumb", "weight": 1.5}
+        ],
+        "min_score": 0.75
     }
 }
 
@@ -116,14 +295,14 @@ def calculate_distance(point1, point2):
     """Calculate Euclidean distance between two points"""
     return np.linalg.norm(point1 - point2)
 
-def are_fingers_together(landmarks, finger1, finger2, threshold=0.05):
+def are_fingers_together(landmarks, finger1, finger2, threshold=0.08):
     """Check if two fingers are held together (tips close)"""
     tip1 = landmarks[FINGER_LANDMARKS[finger1]["tip"]]
     tip2 = landmarks[FINGER_LANDMARKS[finger2]["tip"]]
     distance = calculate_distance(tip1, tip2)
     return distance < threshold
 
-def are_fingers_spread(landmarks, finger1, finger2, threshold=0.08):
+def are_fingers_spread(landmarks, finger1, finger2, threshold=0.15):
     """Check if two fingers are spread apart"""
     tip1 = landmarks[FINGER_LANDMARKS[finger1]["tip"]]
     tip2 = landmarks[FINGER_LANDMARKS[finger2]["tip"]]
@@ -159,7 +338,6 @@ def check_finger_state(landmarks, finger, check_type):
     """
     finger_lm = FINGER_LANDMARKS[finger]
     wrist = landmarks[FINGER_LANDMARKS["wrist"]]
-    
     tip = landmarks[finger_lm["tip"]]
     
     if check_type == "extended":
@@ -167,53 +345,19 @@ def check_finger_state(landmarks, finger, check_type):
         if finger == "thumb":
             ip = landmarks[finger_lm["ip"]]
             mcp = landmarks[finger_lm["mcp"]]
-            index_mcp = landmarks[FINGER_LANDMARKS["index"]["mcp"]]
-            
-            # Check if thumb is extended (tip farther than ip from wrist)
             tip_dist = np.linalg.norm(tip - wrist)
             ip_dist = np.linalg.norm(ip - wrist)
-            
-            # For thumbs up, thumb must be:
-            # 1. Extended significantly (not just alongside)
-            # 2. Pointing upward (tip Y < mcp Y)
-            # 3. Far from the fist (not touching index finger)
-            is_extended = tip_dist > ip_dist * 1.3  # Stricter extension requirement
-            is_pointing_up = tip[1] < mcp[1] - 0.05  # Significantly above mcp
-            is_away_from_fist = calculate_distance(tip, index_mcp) > 0.10  # Far from index
-            
-            return 1.0 if (is_extended and is_pointing_up and is_away_from_fist) else 0.0
+            is_extended = tip_dist > ip_dist * 1.2
+            return 1.0 if is_extended else 0.0
         else:
             mcp = landmarks[finger_lm["mcp"]]
             pip = landmarks[finger_lm["pip"]]
             tip_dist = np.linalg.norm(tip - wrist)
             pip_dist = np.linalg.norm(pip - wrist)
             mcp_dist = np.linalg.norm(mcp - wrist)
-            # Finger extended if tip is farther than pip and pip is farther than mcp
             if tip_dist > pip_dist * 1.1 and pip_dist > mcp_dist * 0.9:
                 return 1.0
             return max(0.0, min(1.0, (tip_dist - pip_dist) / (mcp_dist * 0.3)))
-    
-    elif check_type == "extended_down":
-        # Thumb extended downward
-        if finger == "thumb":
-            ip = landmarks[finger_lm["ip"]]
-            mcp = landmarks[finger_lm["mcp"]]
-            index_mcp = landmarks[FINGER_LANDMARKS["index"]["mcp"]]
-            
-            # Check if thumb is extended (tip farther than ip from wrist)
-            tip_dist = np.linalg.norm(tip - wrist)
-            ip_dist = np.linalg.norm(ip - wrist)
-            
-            # For thumbs down, thumb must be:
-            # 1. Extended significantly (not just alongside)
-            # 2. Pointing downward (tip Y > mcp Y)
-            # 3. Far from the fist (not touching index finger)
-            is_extended = tip_dist > ip_dist * 1.3  # Stricter extension requirement
-            is_pointing_down = tip[1] > mcp[1] + 0.05  # Significantly below mcp
-            is_away_from_fist = calculate_distance(tip, index_mcp) > 0.10  # Far from index
-            
-            return 1.0 if (is_extended and is_pointing_down and is_away_from_fist) else 0.0
-        return 0.0
     
     elif check_type == "curled":
         # Finger is curled if tip is close to palm/wrist
@@ -224,67 +368,83 @@ def check_finger_state(landmarks, finger, check_type):
             return 1.0 if tip_dist < mcp_dist * 1.4 else 0.0
         else:
             mcp = landmarks[finger_lm["mcp"]]
-            pip = landmarks[finger_lm["pip"]]
             tip_dist = np.linalg.norm(tip - wrist)
             mcp_dist = np.linalg.norm(mcp - wrist)
-            # Curled if tip is closer to wrist than expected
             if tip_dist < mcp_dist * 1.3:
                 return 1.0
             return max(0.0, 1.0 - (tip_dist - mcp_dist * 1.3) / (mcp_dist * 0.5))
     
+    elif check_type == "curved":
+        # Finger is curved (partially extended, like C or O shape)
+        mcp = landmarks[finger_lm["mcp"]]
+        tip_dist = np.linalg.norm(tip - wrist)
+        mcp_dist = np.linalg.norm(mcp - wrist)
+        
+        # Curved is between curled and extended (more lenient for C)
+        if mcp_dist > 0:
+            ratio = tip_dist / mcp_dist
+            # More lenient range for curved fingers
+            is_curved = 1.1 < ratio < 2.0
+        else:
+            is_curved = False
+        return 1.0 if is_curved else 0.0
+    
     elif check_type == "thumb_side":
         # Thumb alongside index finger (ASL A)
+        # Thumb rests naturally on the side - doesn't need to stick out much
         if finger == "thumb":
-            index_mcp = landmarks[FINGER_LANDMARKS["index"]["mcp"]]
-            index_pip = landmarks[FINGER_LANDMARKS["index"]["pip"]]
-            
-            # Thumb tip should be near the side of index finger
-            # Check X distance (horizontal) - thumb should be to the side
-            tip_to_index_mcp = calculate_distance(tip, index_mcp)
-            tip_to_index_pip = calculate_distance(tip, index_pip)
-            
-            # Thumb should be close to index finger side
-            is_alongside = min(tip_to_index_mcp, tip_to_index_pip) < 0.08
-            
-            # Thumb should not be across the palm (Y position check)
             mcp = landmarks[finger_lm["mcp"]]
-            is_not_across = abs(tip[0] - mcp[0]) < 0.15  # Not too far horizontally
+            index_mcp = landmarks[FINGER_LANDMARKS["index"]["mcp"]]
+            middle_mcp = landmarks[FINGER_LANDMARKS["middle"]["mcp"]]
             
-            return 1.0 if (is_alongside and is_not_across) else 0.0
+            tip_to_index = calculate_distance(tip, index_mcp)
+            tip_to_middle = calculate_distance(tip, middle_mcp)
+            
+            # Thumb should be near the side of the fist (very lenient)
+            is_near_side = tip_to_index < 0.15 or tip_to_middle < 0.15
+            
+            # For ASL A: accept a wide range - just not completely tucked in
+            # Accept thumb in natural resting position
+            is_not_completely_tucked = tip[2] < index_mcp[2] + 0.05
+            
+            return 1.0 if (is_near_side and is_not_completely_tucked) else 0.0
         return 0.0
     
     elif check_type == "thumb_across":
         # Thumb across fingers (ASL S, B, I)
+        # Thumb is TUCKED IN across the front of fingers
         if finger == "thumb":
             index_mcp = landmarks[FINGER_LANDMARKS["index"]["mcp"]]
             middle_mcp = landmarks[FINGER_LANDMARKS["middle"]["mcp"]]
+            index_pip = landmarks[FINGER_LANDMARKS["index"]["pip"]]
             
-            # Thumb should be across the palm/fingers
-            # Check if thumb tip is between index and middle knuckles
             tip_to_index = calculate_distance(tip, index_mcp)
             tip_to_middle = calculate_distance(tip, middle_mcp)
+            tip_to_index_pip = calculate_distance(tip, index_pip)
             
-            # Thumb should be close to the front of the hand
-            is_across = (tip_to_index < 0.12 or tip_to_middle < 0.12)
+            # Thumb must be very close to the fingers (tucked in tight)
+            is_very_close = (tip_to_index < 0.08 or tip_to_middle < 0.08 or tip_to_index_pip < 0.08)
             
-            return 1.0 if is_across else 0.0
+            # For ASL S: thumb is LESS visible/tucked back (higher Z = further from camera)
+            # Thumb is hidden/wrapped across fingers
+            is_tucked = tip[2] > index_mcp[2] - 0.02
+            
+            return 1.0 if (is_very_close and is_tucked) else 0.0
         return 0.0
     
     elif check_type == "together":
         # Fingers held together (ASL B)
-        # Check if this finger is close to adjacent fingers
         if finger == "index":
             return 1.0 if are_fingers_together(landmarks, "index", "middle") else 0.0
         elif finger == "middle":
             return 1.0 if are_fingers_together(landmarks, "middle", "ring") else 0.0
         elif finger == "ring":
             return 1.0 if are_fingers_together(landmarks, "ring", "pinky") else 0.0
-        return 1.0  # Default for other fingers
+        return 1.0
     
     elif check_type == "spread":
         # Fingers spread apart (ASL Y)
         if finger == "pinky":
-            # Check if pinky is spread from thumb
             thumb_tip = landmarks[FINGER_LANDMARKS["thumb"]["tip"]]
             pinky_tip = landmarks[FINGER_LANDMARKS["pinky"]["tip"]]
             distance = calculate_distance(thumb_tip, pinky_tip)
@@ -295,6 +455,26 @@ def check_finger_state(landmarks, finger, check_type):
         # Thumb perpendicular to index (ASL L)
         if finger == "thumb":
             return 1.0 if is_thumb_perpendicular(landmarks) else 0.0
+        return 0.0
+    
+    elif check_type == "c_shape":
+        # C shape - thumb and fingers form a C
+        if finger == "thumb":
+            index_tip = landmarks[FINGER_LANDMARKS["index"]["tip"]]
+            distance = calculate_distance(tip, index_tip)
+            # Thumb and index should be apart but not too far (more lenient)
+            is_c_shape = 0.05 < distance < 0.25
+            return 1.0 if is_c_shape else 0.0
+        return 0.0
+    
+    elif check_type == "o_shape":
+        # O shape - thumb touches index finger
+        if finger == "thumb":
+            index_tip = landmarks[FINGER_LANDMARKS["index"]["tip"]]
+            distance = calculate_distance(tip, index_tip)
+            # Thumb and index should be very close (touching)
+            is_o_shape = distance < 0.06
+            return 1.0 if is_o_shape else 0.0
         return 0.0
     
     return 0.0
