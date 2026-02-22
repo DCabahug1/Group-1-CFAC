@@ -12,6 +12,7 @@ import { theme } from "../../lib/theme";
 import MasteryCircle from "../components/MasteryCircle";
 import MotivationalBanner from "../components/MotivationalBanner";
 import StatsCard from "../components/StatsCard";
+import { generateLetterRecommendations } from "../lib/aiInsights";
 import { calculateInsights, fetchUserAttempts } from "../lib/proficiency";
 
 export default function Insights() {
@@ -23,6 +24,9 @@ export default function Insights() {
   const [vocabularyCount, setVocabularyCount] = useState(0);
   const [avgAccuracy, setAvgAccuracy] = useState(0);
   const [totalTries, setTotalTries] = useState(0);
+  const [aiTip, setAiTip] = useState<string>(
+    "Small signs every day lead to big conversations",
+  );
 
   const totalLessons = 26; // Total unique letters in alphabet
   const streak = 67; // Placeholder for now
@@ -76,6 +80,12 @@ export default function Insights() {
         setVocabularyCount(insights.vocabularyCount);
         setAvgAccuracy(insights.avgAccuracy);
         setTotalTries(insights.totalTries);
+
+        // Generate AI recommendations
+        const aiRecommendation = await generateLetterRecommendations(data);
+        console.log("AI recommendation:", aiRecommendation);
+        setAiTip(aiRecommendation);
+
         setLoading(false);
       };
 
@@ -109,8 +119,8 @@ export default function Insights() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Motivational Banner */}
-        <MotivationalBanner />
+        {/* Motivational Banner with AI Tips */}
+        <MotivationalBanner title="💡 Personalized Tips" message={aiTip} />
         {/* Stats Cards */}
         <View style={styles.statsRow}>
           <StatsCard
