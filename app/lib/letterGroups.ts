@@ -12,11 +12,11 @@ export const letterGroups: Record<string, string[]> = {
   B: ["B", "C"],
   C: ["B", "C"],
 
-  D: ["D", "G", "H", "X"],
+  D: ["D", "G", "H", "X", "I"],
   G: ["D", "G", "H", "X"],
   H: ["D", "G", "H", "X"],
 
-  I: ["I", "J"],
+  I: ["I", "J", "D"],
   J: ["I", "J"],
 
   K: ["K", "V", "U"],
