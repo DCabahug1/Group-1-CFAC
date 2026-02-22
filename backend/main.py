@@ -3,9 +3,10 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import io
+import os
+import pickle
 import numpy as np
 import cv2
-from utils import match_gesture
 
 app = FastAPI()
 
@@ -18,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize MediaPipe Hands
+# Initialize MediaPipe Hands (persistent instance for speed)
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=True,
@@ -26,33 +27,86 @@ hands = mp_hands.Hands(
     min_detection_confidence=0.5
 )
 
+# Load trained Random Forest model
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "signspeak_model.pickle")
+model = None
+model_classes = []
+
+if os.path.exists(MODEL_PATH):
+    with open(MODEL_PATH, "rb") as f:
+        data = pickle.load(f)
+    model = data["model"]
+    model_classes = data["classes"]
+    print(f"Model loaded: {len(model_classes)} classes — {model_classes}")
+
 def detect_hand_landmarks(image_np):
-    """Detect hand landmarks using MediaPipe"""
+    """Detect hand landmarks using MediaPipe and return raw landmarks"""
     # Convert BGR to RGB
     image_rgb = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-    
+
     # Process image
     results = hands.process(image_rgb)
-    
+
     if not results.multi_hand_landmarks:
         return None
-    
+
     # Get first hand landmarks
     hand_landmarks = results.multi_hand_landmarks[0]
-    
+
     # Extract coordinates
     landmarks = []
     for landmark in hand_landmarks.landmark:
         landmarks.append([landmark.x, landmark.y, landmark.z])
-    
+
     return np.array(landmarks)
+
+
+def normalize_landmarks(landmarks):
+    """
+    Normalize landmarks to be position-invariant.
+    Takes raw (21, 3) landmarks, returns flattened (42,) array of normalized x, y.
+    This matches the format used during training by create_dataset.py.
+    """
+    x_coords = landmarks[:, 0]
+    y_coords = landmarks[:, 1]
+
+    min_x, min_y = x_coords.min(), y_coords.min()
+    range_x = x_coords.max() - min_x or 1
+    range_y = y_coords.max() - min_y or 1
+
+    normalized = []
+    for lm in landmarks:
+        normalized.append((lm[0] - min_x) / range_x)
+        normalized.append((lm[1] - min_y) / range_y)
+
+    return np.array(normalized)
+
+
+def classify_sign(landmarks):
+    """
+    Classify ASL letter from landmarks using the trained Random Forest.
+    Returns (sign_letter, confidence) or (None, 0.0) if model not loaded.
+    """
+    if model is None:
+        return None, 0.0
+
+    # Normalize landmarks to match training format
+    features = normalize_landmarks(landmarks).reshape(1, -1)
+
+    # Predict
+    probabilities = model.predict_proba(features)[0]
+    predicted_idx = np.argmax(probabilities)
+    predicted_class = model.classes_[predicted_idx]
+    confidence = float(probabilities[predicted_idx])
+
+    return predicted_class, confidence
 
 
 @app.post("/detect-hand")
 async def detect(file: UploadFile = File(...)):
     """
     Detect ASL hand sign from uploaded image
-    
+
     Returns:
         - success: bool - Whether detection was successful
         - sign: str - Detected ASL letter (e.g., "ASL_A", "ASL_B")
@@ -62,9 +116,9 @@ async def detect(file: UploadFile = File(...)):
     try:
         # Read uploaded file
         contents = await file.read()
-        
+
         print(f"Received file: {file.filename}, size: {len(contents)} bytes, content_type: {file.content_type}")
-        
+
         if len(contents) == 0:
             return {
                 "success": False,
@@ -72,11 +126,11 @@ async def detect(file: UploadFile = File(...)):
                 "confidence": 0.0,
                 "error": "Empty file received"
             }
-        
+
         # Try OpenCV first
         nparr = np.frombuffer(contents, np.uint8)
         image_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
+
         if image_np is None:
             # Fallback to PIL
             try:
@@ -95,10 +149,10 @@ async def detect(file: UploadFile = File(...)):
                 }
         else:
             print(f"Image loaded via OpenCV: shape {image_np.shape}")
-        
+
         # Detect hand landmarks
         landmarks = detect_hand_landmarks(image_np)
-        
+
         if landmarks is None:
             return {
                 "success": False,
@@ -106,14 +160,14 @@ async def detect(file: UploadFile = File(...)):
                 "confidence": 0.0,
                 "error": "No hand detected"
             }
-        
-        # Match gesture against all specifications
-        gesture_id, confidence = match_gesture(landmarks)
-        
-        if gesture_id:
+
+        # Classify using trained model
+        sign, confidence = classify_sign(landmarks)
+
+        if sign:
             return {
                 "success": True,
-                "sign": gesture_id,
+                "sign": f"ASL_{sign}",
                 "confidence": round(confidence, 2)
             }
         else:
@@ -121,9 +175,9 @@ async def detect(file: UploadFile = File(...)):
                 "success": False,
                 "sign": "UNKNOWN",
                 "confidence": 0.0,
-                "error": "No matching ASL sign detected"
+                "error": "Model not loaded — run train_model.py first"
             }
-    
+
     except Exception as e:
         return {
             "success": False,
@@ -131,6 +185,16 @@ async def detect(file: UploadFile = File(...)):
             "confidence": 0.0,
             "error": str(e)
         }
+
+
+@app.get("/health")
+async def health():
+    return {
+        "status": "ok",
+        "model_loaded": model is not None,
+        "num_classes": len(model_classes),
+        "classes": model_classes,
+    }
 
 
 if __name__ == "__main__":
