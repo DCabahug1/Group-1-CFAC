@@ -1,5 +1,11 @@
 import React, { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { verifyWithAI } from "../../lib/api-client";
 import { theme } from "../../lib/theme";
 import { DetectionResult } from "../../lib/types";
@@ -34,70 +40,74 @@ export default function TestingView({
   const cameraRef = useRef<ASLCameraRef>(null);
 
   const handleDetection = async (result: DetectionResult, imageUri: string) => {
-    setIsProcessing(false);
+    try {
+      console.log("Backend result:", result);
 
-    console.log("Backend result:", result);
+      // Extract just the letter from the result (e.g., "ASL_A" -> "A")
+      let detectedLetter = result.sign.replace("ASL_", "");
 
-    // Extract just the letter from the result (e.g., "ASL_A" -> "A")
-    let detectedLetter = result.sign.replace("ASL_", "");
-
-    if (!detectedLetter && !result.success) {
-      console.error("Detection failed:", result);
-      return; // Skip processing if detection failed
-    }
-
-    // If we have landmarks, verify with AI
-    if (result.landmarks && imageUri) {
-      console.log("Verifying with AI...");
-      const aiResult = await verifyWithAI(
-        imageUri,
-        result.landmarks,
-        detectedLetter,
-      );
-
-      if (aiResult.success && aiResult.letter) {
-        console.log(
-          `AI verification: ${aiResult.letter} (model: ${detectedLetter})`,
-        );
-        // Trust AI result
-        detectedLetter = aiResult.letter;
-      } else {
-        console.log("AI verification failed, using model result");
+      if (!detectedLetter && !result.success) {
+        console.error("Detection failed:", result);
+        setIsProcessing(false);
+        return; // Skip processing if detection failed
       }
+
+      // If we have landmarks, verify with AI
+      if (result.landmarks && imageUri) {
+        console.log("Verifying with AI...");
+        const aiResult = await verifyWithAI(
+          imageUri,
+          result.landmarks,
+          detectedLetter,
+        );
+
+        if (aiResult.success && aiResult.letter) {
+          console.log(
+            `AI verification: ${aiResult.letter} (model: ${detectedLetter})`,
+          );
+          // Trust AI result
+          detectedLetter = aiResult.letter;
+        } else {
+          console.log("AI verification failed, using model result");
+        }
+      }
+
+      // Check if detected letter is in the acceptable group for the expected letter
+      const isCorrect =
+        result.success && isLetterAccepted(currentLetter, detectedLetter);
+
+      console.log("Detection result:", {
+        detectedLetter,
+        currentLetter,
+        isCorrect,
+        acceptedSimilar: detectedLetter !== currentLetter && isCorrect,
+      });
+
+      // Get current attempt number (before increment)
+      const currentProgress = letterProgress.find(
+        (p) => p.letter === currentLetter,
+      );
+      const attemptNumber = (currentProgress?.attempts || 0) + 1;
+
+      // Log attempt to database
+      const success = await sendAttemptToDB({
+        userId,
+        moduleId,
+        letter: currentLetter,
+        isCorrect,
+        detectedLetter,
+        attemptNumber,
+      });
+
+      if (!success) {
+        console.error("Failed to log attempt to database");
+      }
+
+      onLetterComplete(isCorrect);
+    } finally {
+      // Always stop processing, even if there's an error
+      setIsProcessing(false);
     }
-
-    // Check if detected letter is in the acceptable group for the expected letter
-    const isCorrect =
-      result.success && isLetterAccepted(currentLetter, detectedLetter);
-
-    console.log("Detection result:", {
-      detectedLetter,
-      currentLetter,
-      isCorrect,
-      acceptedSimilar: detectedLetter !== currentLetter && isCorrect,
-    });
-
-    // Get current attempt number (before increment)
-    const currentProgress = letterProgress.find(
-      (p) => p.letter === currentLetter,
-    );
-    const attemptNumber = (currentProgress?.attempts || 0) + 1;
-
-    // Log attempt to database
-    const success = await sendAttemptToDB({
-      userId,
-      moduleId,
-      letter: currentLetter,
-      isCorrect,
-      detectedLetter,
-      attemptNumber,
-    });
-
-    if (!success) {
-      console.error("Failed to log attempt to database");
-    }
-
-    onLetterComplete(isCorrect);
   };
 
   const handleCapture = async () => {
@@ -144,6 +154,17 @@ export default function TestingView({
         >
           <View style={styles.captureButtonInner} />
         </Pressable>
+
+        {/* Loading Overlay */}
+        {isProcessing && (
+          <View style={styles.loadingOverlay}>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+              <Text style={styles.loadingText}>Analyzing sign...</Text>
+              <Text style={styles.loadingSubtext}>Verifying with AI</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Current Letter Display */}
@@ -176,7 +197,6 @@ export default function TestingView({
 
       {isProcessing && (
         <View style={styles.processingOverlay}>
-          <Text style={styles.processingText}>Analyzing...</Text>
         </View>
       )}
     </View>
@@ -288,8 +308,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   processingText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.white,
+    marginTop: 10,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  loadingContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.lg,
+    padding: 32,
+    alignItems: "center",
+    gap: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
   },
 });
