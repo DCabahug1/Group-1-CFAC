@@ -18,7 +18,7 @@ function Modules() {
         <Text style={styles.logo}>ASLingo</Text>
         <View style={styles.streakBadge}>
           <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={styles.streakNumber}>67</Text>
+          <Text style={styles.streakNumber}>3</Text>
         </View>
       </View>
 

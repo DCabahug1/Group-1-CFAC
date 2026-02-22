@@ -29,7 +29,7 @@ export default function Insights() {
   );
 
   const totalLessons = 26; // Total unique letters in alphabet
-  const streak = 67; // Placeholder for now
+  const streak = 3; // Placeholder for now
 
   // Calculate module completion stats
   const completedModules = modules.filter((m) => m.completed);
