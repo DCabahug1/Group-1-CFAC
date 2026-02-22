@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { verifyWithAI } from "../../lib/api-client";
 import { theme } from "../../lib/theme";
 import { DetectionResult } from "../../lib/types";
 import { isLetterAccepted } from "../lib/letterGroups";
@@ -32,11 +33,38 @@ export default function TestingView({
   const [isProcessing, setIsProcessing] = useState(false);
   const cameraRef = useRef<ASLCameraRef>(null);
 
-  const handleDetection = async (result: DetectionResult) => {
+  const handleDetection = async (result: DetectionResult, imageUri: string) => {
     setIsProcessing(false);
 
+    console.log("Backend result:", result);
+
     // Extract just the letter from the result (e.g., "ASL_A" -> "A")
-    const detectedLetter = result.sign.replace("ASL_", "");
+    let detectedLetter = result.sign.replace("ASL_", "");
+
+    if (!detectedLetter && !result.success) {
+      console.error("Detection failed:", result);
+      return; // Skip processing if detection failed
+    }
+
+    // If we have landmarks, verify with AI
+    if (result.landmarks && imageUri) {
+      console.log("Verifying with AI...");
+      const aiResult = await verifyWithAI(
+        imageUri,
+        result.landmarks,
+        detectedLetter,
+      );
+
+      if (aiResult.success && aiResult.letter) {
+        console.log(
+          `AI verification: ${aiResult.letter} (model: ${detectedLetter})`,
+        );
+        // Trust AI result
+        detectedLetter = aiResult.letter;
+      } else {
+        console.log("AI verification failed, using model result");
+      }
+    }
 
     // Check if detected letter is in the acceptable group for the expected letter
     const isCorrect =

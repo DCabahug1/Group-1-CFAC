@@ -3,6 +3,7 @@ export interface DetectionResult {
   success: boolean;
   sign: string;
   confidence: number;
+  landmarks?: string; // Hand landmark coordinates for AI verification
 }
 
 export interface Message {

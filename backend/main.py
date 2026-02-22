@@ -7,6 +7,7 @@ import os
 import pickle
 import numpy as np
 import cv2
+# OpenAI verification moved to Supabase Edge Function
 
 app = FastAPI()
 
@@ -83,23 +84,43 @@ def normalize_landmarks(landmarks):
 
 
 def classify_sign(landmarks):
-    """
-    Classify ASL letter from landmarks using the trained Random Forest.
-    Returns (sign_letter, confidence) or (None, 0.0) if model not loaded.
-    """
+    """Classify sign using trained Random Forest model"""
     if model is None:
         return None, 0.0
 
-    # Normalize landmarks to match training format
-    features = normalize_landmarks(landmarks).reshape(1, -1)
+    # Normalize landmarks to match training format (42 features: 21 points × 2 coords)
+    normalized = normalize_landmarks(landmarks)
+    features = normalized.reshape(1, -1)
 
     # Predict
-    probabilities = model.predict_proba(features)[0]
-    predicted_idx = np.argmax(probabilities)
-    predicted_class = model.classes_[predicted_idx]
-    confidence = float(probabilities[predicted_idx])
+    prediction = model.predict(features)
+    probabilities = model.predict_proba(features)
+
+    predicted_class = prediction[0]
+    confidence = np.max(probabilities)
 
     return predicted_class, confidence
+
+
+def format_landmarks_for_prompt(landmarks):
+    """Format hand landmarks into readable text for AI prompt"""
+    # MediaPipe hand landmarks: 21 points (0=wrist, 1-4=thumb, 5-8=index, 9-12=middle, 13-16=ring, 17-20=pinky)
+    # landmarks is a (21, 3) numpy array with [x, y, z] coordinates
+    
+    finger_tips = {
+        "Thumb": 4,
+        "Index": 8,
+        "Middle": 12,
+        "Ring": 16,
+        "Pinky": 20
+    }
+    
+    landmark_text = []
+    for finger_name, tip_idx in finger_tips.items():
+        tip = landmarks[tip_idx]
+        landmark_text.append(f"{finger_name}: ({tip[0]:.2f}, {tip[1]:.2f})")
+    
+    return "; ".join(landmark_text)
 
 
 @app.post("/detect-hand")
@@ -164,19 +185,23 @@ async def detect(file: UploadFile = File(...)):
         # Classify using trained model
         sign, confidence = classify_sign(landmarks)
 
-        if sign:
-            return {
-                "success": True,
-                "sign": f"ASL_{sign}",
-                "confidence": round(confidence, 2)
-            }
-        else:
+        if not sign:
             return {
                 "success": False,
                 "sign": "UNKNOWN",
                 "confidence": 0.0,
                 "error": "Model not loaded — run train_model.py first"
             }
+
+        # Format landmarks for frontend AI verification
+        landmarks_text = format_landmarks_for_prompt(landmarks)
+
+        return {
+            "success": True,
+            "sign": f"ASL_{sign}",
+            "confidence": round(confidence, 2),
+            "landmarks": landmarks_text  # For Supabase Edge Function
+        }
 
     except Exception as e:
         return {

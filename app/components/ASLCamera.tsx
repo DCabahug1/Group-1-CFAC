@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import React, {
   forwardRef,
@@ -11,7 +10,7 @@ import { detectSign } from "../lib/api-client";
 import { DetectionResult } from "../lib/types";
 
 interface ASLCameraProps {
-  onDetection: (result: DetectionResult) => void;
+  onDetection: (result: DetectionResult, imageUri: string) => void;
 }
 
 export interface ASLCameraRef {
@@ -33,14 +32,17 @@ const ASLCamera = forwardRef<ASLCameraRef, ASLCameraProps>(
 
           console.log("photoUri:", photoUri);
 
-          onDetection(result);
+          onDetection(result, photoUri);
         } catch (error) {
           console.error("Error taking picture:", error);
-          onDetection({
-            success: false,
-            sign: "",
-            confidence: 0,
-          });
+          onDetection(
+            {
+              success: false,
+              sign: "",
+              confidence: 0,
+            },
+            "",
+          );
         } finally {
           setIsDetecting(false);
         }
