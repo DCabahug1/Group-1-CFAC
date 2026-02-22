@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { Message } from "./lib/types";
+import { Module, modulesList } from "../app/lib/modules";
+import { Message } from "./types";
 
 interface messageStore {
   // Format for message store
@@ -29,5 +30,25 @@ export const useMessageStore = create<messageStore>((set) => ({
     set((state) => ({
       lastSpokenMessage: message,
     }));
+  },
+}));
+
+interface ModuleStore {
+  modules: Module[];
+  completeModule: (id: number, accuracy: number) => void;
+  resetModules: () => void;
+}
+
+export const useModuleStore = create<ModuleStore>((set) => ({
+  modules: modulesList,
+  completeModule: (id: number, accuracy: number) => {
+    set((state) => ({
+      modules: state.modules.map((module) =>
+        module.id === id ? { ...module, completed: true } : module,
+      ),
+    }));
+  },
+  resetModules: () => {
+    set({ modules: modulesList });
   },
 }));

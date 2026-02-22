@@ -1,15 +1,15 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useModuleStore } from "../../lib/store";
 import { theme } from "../../lib/theme";
-import { Module, modulesList } from "../lib/modules";
 
 type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
 function Modules() {
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty>("Beginner");
-  const [modules, setModules] = useState<Module[]>(modulesList);
+  const modules = useModuleStore((state) => state.modules);
 
   return (
     <View style={styles.container}>

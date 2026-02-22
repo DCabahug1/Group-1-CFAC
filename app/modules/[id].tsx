@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useModuleStore } from "../../lib/store";
 import { theme } from "../../lib/theme";
 import CompletionReport from "../components/CompletionReport";
 import LearningCard from "../components/LearningCard";
@@ -137,7 +138,13 @@ export default function ModuleDetail() {
   };
 
   const handleContinue = () => {
-    // TODO: Mark module as complete if accuracy >= threshold
+    const { accuracy } = calculateStats();
+
+    // Mark module as complete if accuracy >= 60%
+    if (accuracy >= 60) {
+      useModuleStore.getState().completeModule(module.id, accuracy);
+    }
+
     router.back();
   };
 
