@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
-import { modulesList, Module } from "../lib/modules";
+import { Module, modulesList } from "../lib/modules";
 
 type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
@@ -50,7 +51,14 @@ function Modules() {
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
           {/* TODO: Calculate progress based on completed modules */}
-          <View style={[styles.progressFill, { width: `${modules.filter((m) => m.completed).length / modules.length * 100}%` }]} /> 
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${(modules.filter((m) => m.completed).length / modules.length) * 100}%`,
+              },
+            ]}
+          />
         </View>
       </View>
       {/* Modules List */}
@@ -65,14 +73,7 @@ function Modules() {
             key={module.id}
             style={styles.moduleCard}
             onPress={() => {
-              // Navigate to module detail
-              // Testing: Mark module as completed
-              setModules((prevModules) =>
-                prevModules.map((m) =>
-                  m.id === module.id ? { ...m, completed: true } : m,
-                ),
-              );
-              
+              router.push(`/modules/${module.id}`);
             }}
           >
             <View style={styles.moduleContent}>
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.sm,
     overflow: "hidden",
-    marginHorizontal: 20
+    marginHorizontal: 20,
   },
   progressFill: {
     height: "100%",
