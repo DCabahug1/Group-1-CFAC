@@ -48,16 +48,6 @@ def detect_hand_landmarks(image_np):
     return np.array(landmarks)
 
 
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "status": "ok", 
-        "message": "ASL Recognition API is running",
-        "supported_letters": "A-Y (except J, Z)"
-    }
-
-
 @app.post("/detect-hand")
 async def detect(file: UploadFile = File(...)):
     """
