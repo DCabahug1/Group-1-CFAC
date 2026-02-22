@@ -67,9 +67,9 @@ const ASLCamera = forwardRef<ASLCameraRef, ASLCameraProps>(
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={{ flex: 1 }} facing="front" />
-        <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
+        {/* <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
           <Ionicons name="camera" size={24} color="white" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     );
   },
