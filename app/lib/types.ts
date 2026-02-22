@@ -3,7 +3,6 @@ export interface DetectionResult {
   success: boolean;
   sign: string;
   confidence: number;
-  error?: string;
 }
 
 export interface Message {

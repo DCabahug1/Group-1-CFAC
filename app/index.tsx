@@ -28,7 +28,7 @@ export default function Index() {
       </View>
 
       {/* Start Button */}
-      <Link href="/asl-mode" asChild>
+      <Link href="/(tabs)/modules" asChild>
         <Pressable style={styles.button}>
           <Text style={styles.buttonText}>Start Learning</Text>
         </Pressable>
