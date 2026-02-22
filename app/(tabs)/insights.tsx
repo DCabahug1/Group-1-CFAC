@@ -1,26 +1,96 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useModuleStore, useUserSession } from "../../lib/store";
 import { theme } from "../../lib/theme";
 import MasteryCircle from "../components/MasteryCircle";
 import MotivationalBanner from "../components/MotivationalBanner";
 import StatsCard from "../components/StatsCard";
+import { calculateInsights, fetchUserAttempts } from "../lib/proficiency";
 
 export default function Insights() {
-  // Placeholder data - will be replaced with real data from Supabase
-  const vocabularyPercentage = 0;
-  const vocabularyCount = 0;
-  const totalLessons = 37;
-  const avgAccuracy = 0;
-  const masteryPercentage = 0;
-  const streak = 67;
+  const userId = useUserSession((state) => state.userId);
+  const modules = useModuleStore((state) => state.modules);
 
-  // Difficulty breakdown
-  const beginnerCompleted = 0;
-  const beginnerTotal = 10;
-  const intermediateCompleted = 0;
-  const intermediateTotal = 15;
-  const advancedCompleted = 0;
-  const advancedTotal = 12;
+  const [loading, setLoading] = useState(true);
+  const [vocabularyPercentage, setVocabularyPercentage] = useState(0);
+  const [vocabularyCount, setVocabularyCount] = useState(0);
+  const [avgAccuracy, setAvgAccuracy] = useState(0);
+  const [totalTries, setTotalTries] = useState(0);
+
+  const totalLessons = 26; // Total unique letters in alphabet
+  const streak = 67; // Placeholder for now
+
+  // Calculate module completion stats
+  const completedModules = modules.filter((m) => m.completed);
+  const masteryPercentage = Math.round(
+    (completedModules.length / modules.length) * 100,
+  );
+
+  // Difficulty breakdown (assuming modules 1-5 are beginner, etc.)
+  const beginnerModules = modules.slice(0, 5);
+  const intermediateModules = modules.slice(5, 7);
+  const advancedModules = modules.slice(7, 9);
+
+  const beginnerCompleted = beginnerModules.filter((m) => m.completed).length;
+  const beginnerTotal = beginnerModules.length;
+  const intermediateCompleted = intermediateModules.filter(
+    (m) => m.completed,
+  ).length;
+  const intermediateTotal = intermediateModules.length;
+  const advancedCompleted = advancedModules.filter((m) => m.completed).length;
+  const advancedTotal = advancedModules.length;
+
+  // Fetch and calculate insights every time the tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      const loadInsights = async () => {
+        if (!userId) {
+          console.log("No userId available yet");
+          setLoading(false);
+          return;
+        }
+
+        console.log("Loading insights for userId:", userId);
+        setLoading(true);
+        const { data, error } = await fetchUserAttempts(userId);
+
+        if (error || !data) {
+          console.error("Failed to load insights:", error);
+          setLoading(false);
+          return;
+        }
+
+        const insights = calculateInsights(data);
+
+        console.log("Fetched attempts:", data.length);
+        console.log("Calculated insights:", insights);
+
+        setVocabularyPercentage(insights.vocabularyPercentage);
+        setVocabularyCount(insights.vocabularyCount);
+        setAvgAccuracy(insights.avgAccuracy);
+        setTotalTries(insights.totalTries);
+        setLoading(false);
+      };
+
+      loadInsights();
+    }, [userId]),
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading insights...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -47,7 +117,7 @@ export default function Insights() {
             icon="🎯"
             label="Vocabulary"
             value={`${vocabularyPercentage}%`}
-            subtitle={`${vocabularyCount} of ${totalLessons} lessons`}
+            subtitle={`${vocabularyCount} of ${totalLessons} letters`}
           />
           <StatsCard
             icon="📈"
@@ -123,5 +193,14 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     gap: 12,
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
 });

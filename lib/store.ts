@@ -52,3 +52,13 @@ export const useModuleStore = create<ModuleStore>((set) => ({
     set({ modules: modulesList });
   },
 }));
+
+interface UserSessionStore {
+  userId: number | null;
+  setUserId: (id: number) => void;
+}
+
+export const useUserSession = create<UserSessionStore>((set) => ({
+  userId: null,
+  setUserId: (id: number) => set({ userId: id }),
+}));

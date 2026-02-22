@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
 import { DetectionResult } from "../../lib/types";
 import { isLetterAccepted } from "../lib/letterGroups";
+import { sendAttemptToDB } from "../lib/proficiency";
 import ASLCamera, { ASLCameraRef } from "./ASLCamera";
 
 export type LetterStatus = "pending" | "correct" | "second-chance" | "failed";
@@ -17,17 +18,21 @@ interface TestingViewProps {
   currentLetter: string;
   letterProgress: LetterProgress[];
   onLetterComplete: (isCorrect: boolean) => void;
+  userId: number;
+  moduleId: number;
 }
 
 export default function TestingView({
   currentLetter,
   letterProgress,
   onLetterComplete,
+  userId,
+  moduleId,
 }: TestingViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const cameraRef = useRef<ASLCameraRef>(null);
 
-  const handleDetection = (result: DetectionResult) => {
+  const handleDetection = async (result: DetectionResult) => {
     setIsProcessing(false);
 
     // Extract just the letter from the result (e.g., "ASL_A" -> "A")
@@ -43,6 +48,26 @@ export default function TestingView({
       isCorrect,
       acceptedSimilar: detectedLetter !== currentLetter && isCorrect,
     });
+
+    // Get current attempt number (before increment)
+    const currentProgress = letterProgress.find(
+      (p) => p.letter === currentLetter,
+    );
+    const attemptNumber = (currentProgress?.attempts || 0) + 1;
+
+    // Log attempt to database
+    const success = await sendAttemptToDB({
+      userId,
+      moduleId,
+      letter: currentLetter,
+      isCorrect,
+      detectedLetter,
+      attemptNumber,
+    });
+
+    if (!success) {
+      console.error("Failed to log attempt to database");
+    }
 
     onLetterComplete(isCorrect);
   };

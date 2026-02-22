@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useModuleStore } from "../../lib/store";
+import { useModuleStore, useUserSession } from "../../lib/store";
 import { theme } from "../../lib/theme";
 import CompletionReport from "../components/CompletionReport";
 import LearningCard from "../components/LearningCard";
@@ -15,6 +15,7 @@ export default function ModuleDetail() {
   const { id } = useLocalSearchParams();
   const moduleId = Array.isArray(id) ? id[0] : id;
   const module = modulesList.find((m) => m.id === Number(moduleId));
+  const userId = useUserSession((state) => state.userId);
 
   const [mode, setMode] = useState<Mode>("learning");
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
@@ -172,11 +173,13 @@ export default function ModuleDetail() {
           />
         )}
 
-        {mode === "testing" && (
+        {mode === "testing" && userId && (
           <TestingView
             currentLetter={currentLetter}
             letterProgress={letterProgress}
             onLetterComplete={handleLetterComplete}
+            userId={userId}
+            moduleId={module.id}
           />
         )}
 
