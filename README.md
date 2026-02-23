@@ -1,50 +1,25 @@
-# Welcome to your Expo app 👋
+CSUN Code For A Cause 2026 - ASLingo
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Project Title: ASLingo
 
-## Get started
 
-1. Install dependencies
+**Project Overview :** 
+Communication should be a bridge, not a barrier. For Deaf and Hard of Hearing individuals (DHH), navigating a non-ASL-speaking world often results in systemic isolation. In the modern day of universal AI access and tools, accessibility problems of the past should no longer bother us the same. Existing solutions often rely on expensive human interpreters or cumbersome written exchanges that lack spontaneity and speed.
 
-   ```bash
-   npm install
-   ```
+In our mission to eradicate these problems of the past, we built ASLingo powered through AI innovation to bridge the accessibility gap people affecting the DHH community. By capturing signing in real-time and curated AI analysis, ASLingo functions as a digital tutor providing corrective feedback, ensuring users move beyond basic memorization toward a refined, professional command of the language. By transforming practice into real-time connection, ASLingo overcomes language barriers and blazes the path towards seamless dialogue that empower both sides of the conversation.
 
-2. Start the app
+Purpose and Features : ASLingo is designed to dismantle communication barriers by equipping hearing users with the tools to learn, practice, and perfect their ASL. It reduces the "appointment barrier" by allowing for spontaneous, everyday interactions.
 
-   ```bash
-   npx expo start
-   ```
 
-In the output, you'll find options to open the app in a
+**Key Features:**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Dual-Layer Sign Recognition: Real-time image analysis with hand coordinates accessed and referenced through Mediapipe libraries & additionally reanalyzed through OpenAI integration.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Progress Report : Overall learning insights after each lesson guided to encourage and help users on their signing journey.
 
-## Get a fresh project
+**Techstack :**
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Frontend : React Native
+Framework : Expo
+Backend : Supabase
+AI Models : GPT 5.2, Gemini Pro, Figma Make
