@@ -1,6 +1,15 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
+
+// ASL alphabet images for letters A-E
+const aslImages: Record<string, any> = {
+  A: require("../../assets/images/asl-a.png"),
+  B: require("../../assets/images/asl-b.png"),
+  C: require("../../assets/images/asl-c.png"),
+  D: require("../../assets/images/asl-d.png"),
+  E: require("../../assets/images/asl-e.png"),
+};
 
 interface LearningCardProps {
   letter: string;
@@ -41,10 +50,18 @@ export default function LearningCard({
 
       {/* Letter Card */}
       <View style={styles.card}>
-        {/* Placeholder Image */}
+        {/* ASL Image */}
         <View style={styles.imageContainer}>
           <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderEmoji}>✋</Text>
+            {aslImages[letter] ? (
+              <Image
+                source={aslImages[letter]}
+                style={styles.aslImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={styles.placeholderEmoji}>✋</Text>
+            )}
           </View>
         </View>
 
@@ -133,6 +150,10 @@ const styles = StyleSheet.create({
   },
   placeholderEmoji: {
     fontSize: 80,
+  },
+  aslImage: {
+    width: 200,
+    height: 200,
   },
   letterName: {
     fontSize: 64,
