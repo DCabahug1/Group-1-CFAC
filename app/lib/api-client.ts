@@ -2,7 +2,7 @@ import { DetectionResult } from "./types";
 
 // Use your machine's IP address instead of localhost for React Native
 // Get this from the Expo Metro output (exp://YOUR_IP:8081)
-const API_URL = "http://192.168.1.245:8000";
+const API_URL = "http://10.41.163.49:8000";
 
 export const detectSign = async (
   imageUri: string,

@@ -1,4 +1,6 @@
-import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from mediapipe import Image as mp_Image, ImageFormat
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
@@ -21,12 +23,17 @@ app.add_middleware(
 )
 
 # Initialize MediaPipe Hands (persistent instance for speed)
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(
-    static_image_mode=True,
-    max_num_hands=1,
-    min_detection_confidence=0.5
+# Using new Tasks API for mediapipe 0.10.30+
+MODEL_ASSET_PATH = os.path.join(os.path.dirname(__file__), "hand_landmarker.task")
+base_options = python.BaseOptions(model_asset_path=MODEL_ASSET_PATH)
+options = vision.HandLandmarkerOptions(
+    base_options=base_options,
+    num_hands=1,
+    min_hand_detection_confidence=0.5,
+    min_hand_presence_confidence=0.5,
+    min_tracking_confidence=0.5
 )
+hand_landmarker = vision.HandLandmarker.create_from_options(options)
 
 # Load trained Random Forest model
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "signspeak_model.pickle")
@@ -45,18 +52,21 @@ def detect_hand_landmarks(image_np):
     # Convert BGR to RGB
     image_rgb = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
 
-    # Process image
-    results = hands.process(image_rgb)
+    # Create MediaPipe Image object
+    mp_image = mp_Image(image_format=ImageFormat.SRGB, data=image_rgb)
 
-    if not results.multi_hand_landmarks:
+    # Process image
+    results = hand_landmarker.detect(mp_image)
+
+    if not results.hand_landmarks:
         return None
 
     # Get first hand landmarks
-    hand_landmarks = results.multi_hand_landmarks[0]
+    hand_landmarks = results.hand_landmarks[0]
 
     # Extract coordinates
     landmarks = []
-    for landmark in hand_landmarks.landmark:
+    for landmark in hand_landmarks:
         landmarks.append([landmark.x, landmark.y, landmark.z])
 
     return np.array(landmarks)
