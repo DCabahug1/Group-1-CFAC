@@ -2,7 +2,7 @@ import { DetectionResult } from "./types";
 
 // Use your machine's IP address instead of localhost for React Native
 // Get this from the Expo Metro output (exp://YOUR_IP:8081)
-const API_URL = "http://10.41.163.49:8000";
+const API_URL = "http://192.168.1.245:8000";
 
 export const detectSign = async (
   imageUri: string,
@@ -19,14 +19,13 @@ export const detectSign = async (
       name: "hand.jpg",
     });
 
-    // Send to backend
+    // Send to backend - do NOT set Content-Type manually, React Native sets it with boundary
+    console.log("Fetching:", `${API_URL}/detect-hand`);
     const apiResponse = await fetch(`${API_URL}/detect-hand`, {
       method: "POST",
       body: formData,
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
     });
+    console.log("Response status:", apiResponse.status);
 
     if (!apiResponse.ok) {
       throw new Error(`API request failed: ${apiResponse.status}`);

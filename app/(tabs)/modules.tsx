@@ -4,11 +4,16 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useModuleStore } from "../../lib/store";
 import { theme } from "../../lib/theme";
 
-type Difficulty = "Beginner" | "Intermediate" | "Advanced";
+type DifficultyOption = { difficulty: string; locked: boolean };
+
+const DIFFICULTIES: DifficultyOption[] = [
+  { difficulty: "Beginner", locked: false },
+  { difficulty: "Intermediate", locked: true },
+  { difficulty: "Advanced", locked: true },
+];
 
 function Modules() {
-  const [selectedDifficulty, setSelectedDifficulty] =
-    useState<Difficulty>("Beginner");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("Beginner");
   const modules = useModuleStore((state) => state.modules);
 
   return (
@@ -24,27 +29,28 @@ function Modules() {
 
       {/* Difficulty Tabs */}
       <View style={styles.tabsContainer}>
-        {(["Beginner", "Intermediate", "Advanced"] as Difficulty[]).map(
-          (difficulty) => (
-            <Pressable
-              key={difficulty}
+        {DIFFICULTIES.map(({ difficulty, locked }) => (
+          <Pressable
+            key={difficulty}
+            style={[
+              styles.tab,
+              selectedDifficulty === difficulty && styles.tabActive,
+              locked && styles.tabLocked,
+            ]}
+            onPress={() => !locked && setSelectedDifficulty(difficulty)}
+            disabled={locked}
+          >
+            <Text
               style={[
-                styles.tab,
-                selectedDifficulty === difficulty && styles.tabActive,
+                styles.tabText,
+                selectedDifficulty === difficulty && styles.tabTextActive,
+                locked && styles.tabTextLocked,
               ]}
-              onPress={() => setSelectedDifficulty(difficulty)}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedDifficulty === difficulty && styles.tabTextActive,
-                ]}
-              >
-                {difficulty}
-              </Text>
-            </Pressable>
-          ),
-        )}
+              {difficulty}
+            </Text>
+          </Pressable>
+        ))}
       </View>
 
       {/* Progress Bar */}
@@ -157,6 +163,12 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: theme.colors.white,
+  },
+  tabLocked: {
+    opacity: 0.45,
+  },
+  tabTextLocked: {
+    color: theme.colors.textSecondary,
   },
   modulesContainer: {
     flex: 1,

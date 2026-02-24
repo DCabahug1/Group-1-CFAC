@@ -6,7 +6,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { verifyWithAI } from "../../lib/api-client";
 import { theme } from "../../lib/theme";
 import { DetectionResult } from "../../lib/types";
 import { isLetterAccepted } from "../lib/letterGroups";
@@ -29,6 +28,10 @@ interface TestingViewProps {
   moduleId: number;
 }
 
+type FeedbackState = {
+  type: "correct" | "incorrect" | "no-hand" | null;
+};
+
 export default function TestingView({
   currentLetter,
   letterProgress,
@@ -37,6 +40,7 @@ export default function TestingView({
   moduleId,
 }: TestingViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>({ type: null });
   const cameraRef = useRef<ASLCameraRef>(null);
 
   const handleDetection = async (result: DetectionResult, imageUri: string) => {
@@ -44,32 +48,19 @@ export default function TestingView({
       console.log("Backend result:", result);
 
       // Extract just the letter from the result (e.g., "ASL_A" -> "A")
-      let detectedLetter = result.sign.replace("ASL_", "");
+      const detectedLetter = result.sign.replace("ASL_", "");
+
+      console.log("Backend detection:", {
+        detectedLetter,
+        success: result.success,
+        confidence: result.confidence,
+      });
 
       if (!detectedLetter && !result.success) {
         console.error("Detection failed:", result);
+        setFeedback({ type: "no-hand" });
         setIsProcessing(false);
-        return; // Skip processing if detection failed
-      }
-
-      // If we have landmarks, verify with AI
-      if (result.landmarks && imageUri) {
-        console.log("Verifying with AI...");
-        const aiResult = await verifyWithAI(
-          imageUri,
-          result.landmarks,
-          detectedLetter,
-        );
-
-        if (aiResult.success && aiResult.letter) {
-          console.log(
-            `AI verification: ${aiResult.letter} (model: ${detectedLetter})`,
-          );
-          // Trust AI result
-          detectedLetter = aiResult.letter;
-        } else {
-          console.log("AI verification failed, using model result");
-        }
+        return;
       }
 
       // Check if detected letter is in the acceptable group for the expected letter
@@ -85,7 +76,7 @@ export default function TestingView({
 
       // Get current attempt number (before increment)
       const currentProgress = letterProgress.find(
-        (p) => p.letter === currentLetter,
+        (p) => p.letter === currentLetter
       );
       const attemptNumber = (currentProgress?.attempts || 0) + 1;
 
@@ -103,14 +94,21 @@ export default function TestingView({
         console.error("Failed to log attempt to database");
       }
 
+      setFeedback({
+        type: isCorrect ? "correct" : "incorrect",
+        detectedLetter,
+      });
+
+      setTimeout(() => setFeedback({ type: null }), 1500);
+
       onLetterComplete(isCorrect);
     } finally {
-      // Always stop processing, even if there's an error
       setIsProcessing(false);
     }
   };
 
   const handleCapture = async () => {
+    setFeedback({ type: null });
     setIsProcessing(true);
     if (cameraRef.current) {
       await cameraRef.current.takePicture();
@@ -137,11 +135,11 @@ export default function TestingView({
         <ASLCamera ref={cameraRef} onDetection={handleDetection} />
 
         {/* Camera Icon Overlay */}
-        <View style={styles.cameraIconOverlay}>
+        {/* <View style={styles.cameraIconOverlay}>
           <View style={styles.cameraIconContainer}>
             <Text style={styles.cameraIcon}>📷</Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Capture Button */}
         <Pressable
@@ -161,7 +159,44 @@ export default function TestingView({
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
               <Text style={styles.loadingText}>Analyzing sign...</Text>
-              <Text style={styles.loadingSubtext}>Verifying with AI</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Feedback Overlay */}
+        {!isProcessing && feedback.type && (
+          <View
+            style={[
+              styles.feedbackOverlay,
+            ]}
+          >
+            <View style={[
+              styles.feedbackContainer,
+              feedback.type === "correct" && styles.feedbackCorrect,
+              feedback.type === "incorrect" && styles.feedbackIncorrect,
+              feedback.type === "no-hand" && styles.feedbackNoHand,
+            ]}>
+              <Text style={styles.feedbackEmoji}>
+                {feedback.type === "correct"
+                  ? "✅"
+                  : feedback.type === "incorrect"
+                  ? "❌"
+                  : "🤚"}
+              </Text>
+              <Text style={styles.feedbackTitle}>
+                {feedback.type === "correct"
+                  ? "Correct!"
+                  : feedback.type === "incorrect"
+                  ? "Not quite"
+                  : "No hand detected"}
+              </Text>
+              <Text style={styles.feedbackSubtext}>
+                {feedback.type === "correct"
+                  ? `Great job signing ${currentLetter}!`
+                  : feedback.type === "incorrect"
+                  ? "Try again"
+                  : "Make sure your hand is visible"}
+              </Text>
             </View>
           </View>
         )}
@@ -195,10 +230,7 @@ export default function TestingView({
         ))}
       </View>
 
-      {isProcessing && (
-        <View style={styles.processingOverlay}>
-        </View>
-      )}
+      {isProcessing && <View style={styles.processingOverlay}></View>}
     </View>
   );
 }
@@ -343,5 +375,49 @@ const styles = StyleSheet.create({
   loadingSubtext: {
     fontSize: 14,
     color: theme.colors.textSecondary,
+  },
+  feedbackOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  feedbackContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: theme.borderRadius.lg,
+
+  },
+  feedbackCorrect: {
+    backgroundColor: "rgba(34, 197, 94, 0.8)",
+  },
+  feedbackIncorrect: {
+    backgroundColor: "rgba(239, 68, 68, 0.8)",
+  },
+  feedbackNoHand: {
+    backgroundColor: "rgba(107, 114, 128, 0.8)",
+  },
+  feedbackEmoji: {
+    fontSize: 36,
+  },
+  feedbackTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.white,
+  },
+  feedbackSubtext: {
+    fontSize: 15,
+    color: theme.colors.white,
+    opacity: 0.9,
+    textAlign: "center",
   },
 });

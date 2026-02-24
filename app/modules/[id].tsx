@@ -141,8 +141,8 @@ export default function ModuleDetail() {
   const handleContinue = () => {
     const { accuracy } = calculateStats();
 
-    // Mark module as complete if accuracy >= 60%
-    if (accuracy >= 60) {
+    // Mark module as complete if all letters are correct
+    if (accuracy == 100) {
       useModuleStore.getState().completeModule(module.id, accuracy);
     }
 
